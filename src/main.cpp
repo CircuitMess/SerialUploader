@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <dirent.h>
 #include "Serial.h"
 #include "Uploader.h"
 
@@ -10,6 +11,14 @@ int main(int argc, char* argv[]){
 
 	char* dir = argv[1];
 	char* port = argv[2];
+
+	DIR* d;
+	if(!(d = opendir(dir))){
+		printf("Directory doesn't exist or isn't a directory\n");
+		exit(2);
+	}else{
+		closedir(d);
+	}
 
 	Serial serial(port);
 
