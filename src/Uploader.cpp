@@ -48,13 +48,13 @@ bool Uploader::upload(char* dir){
 
 	dirent* file;
 	struct stat info;
-	char filename[10];
+	char filename[MAX_FILENAME + 1];
 	unsigned char data[256];
 	while((file = readdir(dp))){
 		if(!(file->d_type & (DT_LNK | DT_REG))) continue;
 
-		sprintf(filename, "%.9s", file->d_name);
-		filename[9] = 0;
+		sprintf(filename, "%.24s", file->d_name);
+		filename[MAX_FILENAME] = 0;
 
 		char fullpath[PATH_MAX];
 		sprintf(fullpath, "%s/%s", dir, file->d_name);
@@ -63,7 +63,7 @@ bool Uploader::upload(char* dir){
 
 		printf("%s %u B\n", filename, filesize);
 
-		serial->write(reinterpret_cast<unsigned char*>(filename), 10);
+		serial->write(reinterpret_cast<unsigned char*>(filename), MAX_FILENAME + 1);
 		serial->write(reinterpret_cast<unsigned char*>(&filesize), sizeof(uint32_t));
 
 		FILE* file = fopen(fullpath, "r");
