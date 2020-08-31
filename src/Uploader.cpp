@@ -7,11 +7,6 @@
 
 Uploader::Uploader(Serial* serial) : serial(serial){ }
 
-bool Uploader::start(char* dir){
-	if(!setup()) return false;
-	return upload(dir);
-}
-
 bool Uploader::setup(){
 	printf("Sending upload confirmation\n");
 	serial->write((unsigned char*) "upload", 6);
