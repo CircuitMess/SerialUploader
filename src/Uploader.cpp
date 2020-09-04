@@ -5,6 +5,12 @@
 #include <cstdint>
 #include "Uploader.h"
 
+#if defined(__CYGWIN__) || defined(_WIN64) || defined(_WIN32)
+#define SEP "\\"
+#else
+#define SEP "/"
+#endif
+
 Uploader::Uploader(Serial* serial) : serial(serial){ }
 
 bool Uploader::setup(){
@@ -57,7 +63,7 @@ bool Uploader::upload(char* dir){
 		filename[MAX_FILENAME] = 0;
 
 		char fullpath[PATH_MAX];
-		sprintf(fullpath, "%s/%s", dir, file->d_name);
+		sprintf(fullpath, "%s%s%s", dir, SEP, file->d_name);
 		stat(fullpath, &info);
 		uint32_t filesize = info.st_size;
 
