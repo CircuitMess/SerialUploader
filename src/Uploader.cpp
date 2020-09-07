@@ -3,9 +3,13 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <cstdint>
+#include <unistd.h>
 #include "Uploader.h"
+#include "DirectoryWalker.h"
 
 #if defined(__CYGWIN__) || defined(_WIN64) || defined(_WIN32)
+#include <windows.h>
+#define WINDOWS
 #define SEP "\\"
 #else
 #define SEP "/"
@@ -49,39 +53,44 @@ uint32_t swendian(uint32_t value){
 }
 
 bool Uploader::upload(char* dir){
-	DIR* dp = opendir(dir);
-	if(dp == nullptr) return false;
-
-	dirent* file;
-	struct stat info;
 	char filename[MAX_FILENAME + 1];
 	unsigned char data[256];
-	while((file = readdir(dp))){
-		if(!(file->d_type & (DT_LNK | DT_REG))) continue;
 
-		sprintf(filename, "%.24s", file->d_name);
+	DirectoryWalker walker([&](const char* name, const char* path, uint32_t size){
+		printf("%s %u B\n", name, size);
+
+		sprintf(filename, "%.24s", name);
 		filename[MAX_FILENAME] = 0;
 
-		char fullpath[PATH_MAX];
-		sprintf(fullpath, "%s%s%s", dir, SEP, file->d_name);
-		stat(fullpath, &info);
-		uint32_t filesize = info.st_size;
+		FILE* file = fopen(path, "r");
+		uint32_t sentSum;
+		uint32_t sum;
+		do {
+			serial->write(reinterpret_cast<unsigned char*>(filename), MAX_FILENAME + 1);
+			serial->write(reinterpret_cast<unsigned char*>(&size), sizeof(uint32_t));
 
-		printf("%s %u B\n", filename, filesize);
+			fseek(file, 0, SEEK_SET);
+			sum = 0;
 
-		serial->write(reinterpret_cast<unsigned char*>(filename), MAX_FILENAME + 1);
-		serial->write(reinterpret_cast<unsigned char*>(&filesize), sizeof(uint32_t));
+			size_t bytes;
+			while((bytes = fread(data, 1, 256, file))){
+				serial->write(data, bytes);
 
-		FILE* file = fopen(fullpath, "r");
-		size_t bytes;
-		while((bytes = fread(data, 1, 256, file))){
-			serial->write(data, bytes);
-		}
+				for(int i = 0; i < bytes; i += sizeof(uint32_t)){
+					sum += *reinterpret_cast<uint32_t*>(&data);
+				}
+
+				usleep(5 * 1000);
+			}
+
+			serial->read(reinterpret_cast<unsigned char*>(&sentSum), sizeof(uint32_t));
+			if(sentSum != sum){
+				printf("Checksum mismatch. Device received %u, expected %u\n", sentSum, sum);
+			}
+		}while(sentSum != sum);
+
 		fclose(file);
-	}
+	});
 
-	closedir(dp);
-
-	strncpy(filename, "end\0", 4);
-	serial->write(reinterpret_cast<unsigned char*>(filename), 10);
+	return walker.walk(dir);
 }
