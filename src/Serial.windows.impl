@@ -1,0 +1,102 @@
+#include "Serial.h"
+#include <stdio.h>
+
+Serial::Serial(const char* port){
+	this->port = port;
+}
+
+bool Serial::open(){
+	HANDLE port = CreateFileA(this->port, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if(port == INVALID_HANDLE_VALUE){
+		printf("Invalid handle\n");
+		return false;
+	}
+
+	// Flush away any bytes previously read or written.
+	BOOL success = FlushFileBuffers(port);
+	if(!success){
+		printf("Failed to flush serial port\n");
+		CloseHandle(port);
+		return false;
+	}
+
+	// Configure read and write operations to time out after 100 ms.
+	COMMTIMEOUTS timeouts = {};
+	timeouts.ReadIntervalTimeout = 0;          // Never timeout, always wait for data.
+	timeouts.ReadTotalTimeoutMultiplier = 0;   // Do not allow big read timeout when big read buffer used
+	timeouts.ReadTotalTimeoutConstant = 0;     // Total read timeout (period of read loop)
+	timeouts.WriteTotalTimeoutConstant = 0;    // Const part of write timeout
+	timeouts.WriteTotalTimeoutMultiplier = 0; // Variable part of write timeout (per byte)
+	success = SetCommTimeouts(port, &timeouts);
+	if(!success){
+		printf("Failed to set serial timeouts\n");
+		CloseHandle(port);
+		return false;
+	}
+
+	DCB state = { 0 };
+	SecureZeroMemory(&state, sizeof(DCB));
+	state.DCBlength = sizeof(DCB);
+	success = GetCommState(port, &state);
+	if(!success){
+		printf("Failed to get serial settings\n");
+		CloseHandle(port);
+		return false;
+	}
+
+	state.BaudRate = 115200;
+	state.Parity = NOPARITY;
+	state.ByteSize = 8;
+	state.StopBits = ONESTOPBIT;
+	state.fRtsControl = RTS_CONTROL_DISABLE;
+	state.fDtrControl = DTR_CONTROL_DISABLE;
+	state.fOutxDsrFlow = FALSE;
+	state.fOutxCtsFlow = FALSE;
+	state.fOutX = FALSE;
+	state.fInX = FALSE;
+	state.fBinary = true;
+
+	success = SetCommState(port, &state);
+	if(!success){
+		printf("Failed to set serial settings\n");
+		CloseHandle(port);
+		return false;
+	}
+
+	PurgeComm(port, PURGE_RXCLEAR);
+	PurgeComm(port, PURGE_TXCLEAR);
+
+	fd = port;
+	return true;
+}
+
+size_t Serial::write(unsigned char* buffer, size_t size){
+	if(fd == (HANDLE) -1) return -1;
+
+	DWORD written;
+	BOOL success = WriteFile(fd, buffer, size, &written, NULL);
+
+	if(!success){
+		return -1;
+	}
+
+	return written;
+}
+
+size_t Serial::read(unsigned char* buffer, size_t size){
+	if(fd == (HANDLE) -1) return -1;
+
+	DWORD received;
+	BOOL success = ReadFile(fd, buffer, size, &received, NULL);
+
+	if(!success){
+		return -1;
+	}
+
+	return received;
+}
+
+void Serial::close(){
+	if(fd == (HANDLE) -1) return;
+	CloseHandle(fd);
+}

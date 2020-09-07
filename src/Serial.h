@@ -1,8 +1,11 @@
 #ifndef SERIALUPLOADER_SERIAL_H
 #define SERIALUPLOADER_SERIAL_H
 
-
 #include <cstdlib>
+
+#ifdef WINDOWS
+#include <windows.h>
+#endif
 
 class Serial {
 public:
@@ -16,7 +19,12 @@ public:
 
 private:
 	const char* port;
+
+#ifdef WINDOWS
+	HANDLE fd;
+#else
 	int fd = -1;
+#endif
 
 };
 
