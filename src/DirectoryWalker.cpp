@@ -2,16 +2,11 @@
 
 #if defined(__CYGWIN__) || defined(_WIN64) || defined(_WIN32)
 #define WINDOWS
-#define SEP "\\"
-
 #include <windows.h>
 #else
-#define SEP "/"
-
 #include <dirent.h>
 #include <sys/stat.h>
 #include <cstdio>
-
 #endif
 
 DirectoryWalker::DirectoryWalker(onFileFunc onFile) : onFile(onFile){ }
@@ -29,7 +24,11 @@ bool DirectoryWalker::walk(const char* dir){
 
 	do {
 		if(file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
-		onFile(file.cFileName, file.nFileSizeLow);
+
+		char fullpath[PATH_MAX];
+		sprintf(fullpath, "%s\\%s", dir, file.cFileName);
+
+		onFile(file.cFileName, fullpath, file.nFileSizeLow);
 	} while(FindNextFile(hFind, &file) != 0);
 
 	FindClose(hFind);
@@ -43,7 +42,7 @@ bool DirectoryWalker::walk(const char* dir){
 		if(!(file->d_type & (DT_LNK | DT_REG))) continue;
 
 		char fullpath[PATH_MAX];
-		sprintf(fullpath, "%s%s%s", dir, SEP, file->d_name);
+		sprintf(fullpath, "%s/%s", dir, file->d_name);
 		stat(fullpath, &info);
 
 		onFile(file->d_name, fullpath, info.st_size);
