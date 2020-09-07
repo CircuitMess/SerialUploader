@@ -1,19 +1,6 @@
-#include <cstdio>
 #include <cstring>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <cstdint>
-#include <unistd.h>
 #include "Uploader.h"
 #include "DirectoryWalker.h"
-
-#if defined(__CYGWIN__) || defined(_WIN64) || defined(_WIN32)
-#include <windows.h>
-#define WINDOWS
-#define SEP "\\"
-#else
-#define SEP "/"
-#endif
 
 Uploader::Uploader(Serial* serial) : serial(serial){ }
 
@@ -79,8 +66,6 @@ bool Uploader::upload(char* dir){
 				for(int i = 0; i < bytes; i += sizeof(uint32_t)){
 					sum += *reinterpret_cast<uint32_t*>(&data);
 				}
-
-				usleep(5 * 1000);
 			}
 
 			serial->read(reinterpret_cast<unsigned char*>(&sentSum), sizeof(uint32_t));
