@@ -77,5 +77,11 @@ bool Uploader::upload(char* dir){
 		fclose(file);
 	});
 
-	return walker.walk(dir);
+	bool success;
+	if((success = walker.walk(dir))){
+		strncpy(filename, "end\0", 4);
+		serial->write(reinterpret_cast<unsigned char*>(filename), 10);
+	}
+
+	return success;
 }
