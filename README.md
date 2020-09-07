@@ -22,4 +22,6 @@ After receiving the ready string, the uploader starts sending files. For each fi
 
 Following the file metadata, the whole file is read from disk and sent as a raw byte stream, in chunks of 256 bytes.
 
+After each file, the uploader expects to receive a 32 bit unsigned integer file checksum, calculated by summing each byte of the file as an unsigned integer. If the received checksum doesn't match the file, that file is re-sent. 
+
 After all files in the directory are uploaded, a 4 character string `end\0` is sent, indicating the end of the upload operation.
