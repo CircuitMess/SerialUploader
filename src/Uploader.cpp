@@ -49,7 +49,7 @@ bool Uploader::upload(char* dir){
 		sprintf(filename, "%.24s", name);
 		filename[MAX_FILENAME] = 0;
 
-		FILE* file = fopen(path, "r");
+		FILE* file = fopen(path, "rb");
 		uint32_t sentSum;
 		uint32_t sum;
 		do {
