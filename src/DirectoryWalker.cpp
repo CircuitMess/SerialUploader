@@ -6,11 +6,10 @@
 #else
 #include <dirent.h>
 #include <sys/stat.h>
-#include <cstdio>
+#endif
+
 #include <sstream>
 #include <cstring>
-
-#endif
 
 DirectoryWalker::DirectoryWalker(onFileFunc onFile) : onFile(onFile){ }
 
@@ -26,12 +25,23 @@ bool DirectoryWalker::walk(const char* dir, const char* prefix){
 	}
 
 	do {
-		if(file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
-
 		char fullpath[PATH_MAX];
 		sprintf(fullpath, "%s\\%s", dir, file.cFileName);
 
-		onFile(file.cFileName, fullpath, file.nFileSizeLow);
+		if(file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
+			if(!strncmp(file.cFileName, "..", 3) || !strncmp(file.cFileName, ".", 2)) continue;
+
+			std::stringstream str;
+			str << prefix << file.cFileName << "-";
+
+			walk(fullpath, str.str().c_str());
+			continue;
+		}
+
+		char filename[FILENAME_MAX];
+		sprintf(filename, "%s%s", prefix, file.cFileName);
+
+		onFile(filename, fullpath, file.nFileSizeLow);
 	} while(FindNextFile(hFind, &file) != 0);
 
 	FindClose(hFind);
