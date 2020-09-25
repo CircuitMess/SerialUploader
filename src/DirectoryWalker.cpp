@@ -7,11 +7,14 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <cstdio>
+#include <sstream>
+#include <cstring>
+
 #endif
 
 DirectoryWalker::DirectoryWalker(onFileFunc onFile) : onFile(onFile){ }
 
-bool DirectoryWalker::walk(const char* dir){
+bool DirectoryWalker::walk(const char* dir, const char* prefix){
 #ifdef WINDOWS
 	char dirSearch[PATH_MAX];
 	sprintf(dirSearch, "%s\\*", dir);
@@ -39,13 +42,26 @@ bool DirectoryWalker::walk(const char* dir){
 	dirent* file;
 	struct stat info;
 	while((file = readdir(dp))){
-		if(!(file->d_type & (DT_LNK | DT_REG))) continue;
+		if(!(file->d_type & (DT_LNK | DT_REG | DT_DIR))) continue;
 
 		char fullpath[PATH_MAX];
 		sprintf(fullpath, "%s/%s", dir, file->d_name);
-		stat(fullpath, &info);
 
-		onFile(file->d_name, fullpath, info.st_size);
+		if(file->d_type & DT_DIR){
+			if(!strncmp(file->d_name, "..", 3) || !strncmp(file->d_name, ".", 2)) continue;
+
+			std::stringstream str;
+			str << prefix << file->d_name << "-";
+
+			walk(fullpath, str.str().c_str());
+			continue;
+		}
+
+		char filename[FILENAME_MAX];
+		sprintf(filename, "%s%s", prefix, file->d_name);
+
+		stat(fullpath, &info);
+		onFile(filename, fullpath, info.st_size);
 	}
 
 	closedir(dp);

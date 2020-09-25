@@ -10,7 +10,7 @@ class DirectoryWalker {
 public:
 	DirectoryWalker(onFileFunc onFile);
 
-	bool walk(const char* dir);
+	bool walk(const char* dir, const char* prefix = "");
 
 private:
 	onFileFunc onFile;
