@@ -46,7 +46,7 @@ bool Uploader::upload(char* dir){
 	DirectoryWalker walker([&](const char* name, const char* path, uint32_t size){
 		printf("%s %u B\n", name, size);
 
-		sprintf(filename, "%.24s", name);
+		sprintf(filename, "%.254s", name);
 		filename[MAX_FILENAME] = 0;
 
 		FILE* file = fopen(path, "rb");

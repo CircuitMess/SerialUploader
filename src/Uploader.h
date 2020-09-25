@@ -4,7 +4,7 @@
 
 #include "Serial.h"
 
-#define MAX_FILENAME 24
+#define MAX_FILENAME 255
 
 class Uploader {
 public:
