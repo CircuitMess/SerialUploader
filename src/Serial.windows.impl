@@ -6,7 +6,10 @@ Serial::Serial(const char* port){
 }
 
 bool Serial::open(){
-	HANDLE port = CreateFileA(this->port, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	char portPath[60];
+	sprintf(portPath, "\\\\.\\%s", this->port);
+
+	HANDLE port = CreateFileA(portPath, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if(port == INVALID_HANDLE_VALUE){
 		printf("Invalid handle\n");
 		return false;
