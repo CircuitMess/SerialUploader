@@ -57,6 +57,7 @@ bool Uploader::upload(char* dir){
 			serial->write(reinterpret_cast<unsigned char*>(&size), sizeof(uint32_t));
 
 			fseek(file, 0, SEEK_SET);
+			sentSum = 0;
 			sum = 0;
 
 			size_t bytes;
