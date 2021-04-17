@@ -52,6 +52,7 @@ bool Uploader::upload(char* dir){
 		FILE* file = fopen(path, "rb");
 		uint32_t sentSum;
 		uint32_t sum;
+		uint8_t retries = 0;
 		do {
 			serial->write(reinterpret_cast<unsigned char*>(filename), MAX_FILENAME + 1);
 			serial->write(reinterpret_cast<unsigned char*>(&size), sizeof(uint32_t));
@@ -72,6 +73,10 @@ bool Uploader::upload(char* dir){
 			serial->read(reinterpret_cast<unsigned char*>(&sentSum), sizeof(uint32_t));
 			if(sentSum != sum){
 				printf("Checksum mismatch. Device received %u, expected %u\n", sentSum, sum);
+				if (++retries > 3) {
+					printf("Max retries reached...\n");
+					break;
+				}
 			}
 		}while(sentSum != sum);
 
