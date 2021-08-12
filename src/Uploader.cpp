@@ -46,25 +46,29 @@ bool Uploader::upload(char* dir){
 	DirectoryWalker walker([&](const char* name, const char* path, uint32_t size){
 		printf("%s %u B\n", name, size);
 
+		if(size == 0){
+			printf("empty, skipping\n");
+			return;
+		}
+
 		sprintf(filename, "%.254s", name);
 		filename[MAX_FILENAME] = 0;
 
 		FILE* file = fopen(path, "rb");
-		uint32_t sentSum;
-		uint32_t sum;
+		uint32_t sentSum = 0;
+		uint32_t sum = 0;
 		do {
 			serial->write(reinterpret_cast<unsigned char*>(filename), MAX_FILENAME + 1);
 			serial->write(reinterpret_cast<unsigned char*>(&size), sizeof(uint32_t));
 
 			fseek(file, 0, SEEK_SET);
 			sum = 0;
-
 			size_t bytes;
 			while((bytes = fread(data, 1, 256, file))){
 				serial->write(data, bytes);
 
 				for(int i = 0; i < bytes; i += sizeof(uint32_t)){
-					sum += *reinterpret_cast<uint32_t*>(&data);
+					sum += *((uint32_t*)(&data[i]));
 				}
 			}
 
