@@ -1,4 +1,5 @@
 #include <cstring>
+#include <cstdio>
 #include "Uploader.h"
 #include "DirectoryWalker.h"
 
