@@ -1,4 +1,5 @@
 #include <cstring>
+#include <cstdio>
 #include "Uploader.h"
 #include "DirectoryWalker.h"
 
@@ -46,6 +47,11 @@ bool Uploader::upload(char* dir){
 	DirectoryWalker walker([&](const char* name, const char* path, uint32_t size){
 		printf("%s %u B\n", name, size);
 
+		if(size == 0){
+			printf("empty, skipping\n");
+			return;
+		}
+
 		sprintf(filename, "%.254s", name);
 		filename[MAX_FILENAME] = 0;
 
@@ -66,7 +72,7 @@ bool Uploader::upload(char* dir){
 				serial->write(data, bytes);
 
 				for(int i = 0; i < bytes; i += sizeof(uint32_t)){
-					sum += *reinterpret_cast<uint32_t*>(&data);
+					sum += *((uint32_t*)(&data[i]));
 				}
 			}
 
