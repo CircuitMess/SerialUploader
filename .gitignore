@@ -5,5 +5,5 @@ build
 CMakeFiles
 CMakeCache.txt
 Makefile
-SerialUploader.exe
+SerialUploader*
 cmake_install.cmake
